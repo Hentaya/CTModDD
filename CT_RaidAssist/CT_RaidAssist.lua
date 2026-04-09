@@ -2361,7 +2361,7 @@ function StaticClickCastBroker()
 	-- CONSTRUCTOR
 	do
 		module:regEvent("PLAYER_LOGIN", obj.Refresh);
-		module:regEvent("LEARNED_SPELL_IN_TAB", updateSpells);
+		module:regEvent("SPELLS_CHANGED", updateSpells);
 		if (module:getGameVersion() >= 3) then
 			module:regEvent("ACTIVE_TALENT_GROUP_CHANGED", updateSpells);
 		end

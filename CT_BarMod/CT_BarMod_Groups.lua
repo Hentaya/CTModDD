@@ -339,8 +339,14 @@ local setActionPage_unsecure = function(self, page)
 	-- Blizzard doesn't update the page number font string on the
 	-- action bar arrows when you get into a vehicle, even though
 	-- the game has changed the action bar page to 1 (GetActionBarPage() == 1).
-	(MainMenuBarPageNumber or MainMenuBarArtFrame and MainMenuBarArtFrame.PageNumber or MainMenuBar.ActionBarPageNumber.Text):SetText(GetActionBarPage());   --Changed in WoW 8.0.1
+	local pageText =
+	MainMenuBarPageNumber
+	or (MainMenuBarArtFrame and MainMenuBarArtFrame.PageNumber)
+	or (MainMenuBar and MainMenuBar.ActionBarPageNumber and MainMenuBar.ActionBarPageNumber.Text)
 
+	if (pageText and pageText.SetText) then
+		pageText:SetText(GetActionBarPage())
+	end
 
 	-- Update our key bindings list if the window is visible.
 	module.keybindings_buttonsUpdateList();
@@ -378,9 +384,11 @@ local setActionPage_secure = [=[
 	local button = self:GetFrameRef("child1");
 	
 	-- see CT_BarMod_SpellFlyout.lua
-	local flyout = button:GetFrameRef("ctSpellFlyout")
-	if flyout then
-		flyout:Hide()
+	if (button) then
+		local flyout = button:GetFrameRef("ctSpellFlyout");
+		if (flyout) then
+			flyout:Hide();
+		end
 	end
 	
 	while (button) do

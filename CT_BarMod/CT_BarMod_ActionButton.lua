@@ -690,14 +690,20 @@ end);
 
 function module:setMode(newMode)
 	if ( currentMode ~= newMode ) then
-		if ( currentMode ) then
-			module[currentMode.."Disable"](module);
+		local disableFunc = currentMode and module[currentMode.."Disable"]
+		if disableFunc then
+			disableFunc(module)
 		end
-		newButtonMeta = module[newMode.."ButtonMeta"];
-		currentButtonClass = module[newMode.."ButtonClass"];
-		actionButtonList:setMode(newMode);
-		currentMode = newMode;
-		module[newMode.."Enable"](module);
+
+		newButtonMeta = module[newMode.."ButtonMeta"]
+		currentButtonClass = module[newMode.."ButtonClass"]
+		actionButtonList:setMode(newMode)
+		currentMode = newMode
+
+		local enableFunc = module[newMode.."Enable"]
+		if enableFunc then
+			enableFunc(module)
+		end
 	end
 end
 

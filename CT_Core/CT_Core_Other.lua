@@ -1513,28 +1513,36 @@ end
 -- Hides the gryphons if the user does not have CT_BottomBar installed
 -- val is true should the gryphons be hidden, or false should they remain visible
 local function hide_gryphons(val)
-	if (CT_BottomBar) then return; end
-	if (val) then
-		if MainMenuBar.EndCaps then
-			MainMenuBar.EndCaps.LeftEndCap:Hide()
-			MainMenuBar.EndCaps.RightEndCap:Hide()
-		elseif module:getGameVersion() >= 8 then
-			MainMenuBarArtFrame.LeftEndCap:Hide()
-			MainMenuBarArtFrame.RightEndCap:Hide()
-		else
-			MainMenuBarLeftEndCap:Hide()
-			MainMenuBarRightEndCap:Hide()
+	if (CT_BottomBar) then
+		return
+	end
+
+	local leftCap, rightCap
+
+	if MainMenuBar and MainMenuBar.EndCaps then
+		leftCap = MainMenuBar.EndCaps.LeftEndCap
+		rightCap = MainMenuBar.EndCaps.RightEndCap
+	elseif MainMenuBarArtFrame then
+		leftCap = MainMenuBarArtFrame.LeftEndCap
+		rightCap = MainMenuBarArtFrame.RightEndCap
+	else
+		leftCap = MainMenuBarLeftEndCap
+		rightCap = MainMenuBarRightEndCap
+	end
+
+	if val then
+		if leftCap and leftCap.Hide then
+			leftCap:Hide()
+		end
+		if rightCap and rightCap.Hide then
+			rightCap:Hide()
 		end
 	else
-		if MainMenuBar.EndCaps then
-			MainMenuBar.EndCaps.LeftEndCap:Show()
-			MainMenuBar.EndCaps.RightEndCap:Show()
-		elseif module:getGameVersion() >= 8 then
-			MainMenuBarArtFrame.LeftEndCap:Show()
-			MainMenuBarArtFrame.RightEndCap:Show()
-		else
-			MainMenuBarLeftEndCap:Show()
-			MainMenuBarRightEndCap:Show()
+		if leftCap and leftCap.Show then
+			leftCap:Show()
+		end
+		if rightCap and rightCap.Show then
+			rightCap:Show()
 		end
 	end
 end
@@ -1864,6 +1872,7 @@ do
 			local openBackpack = data.backpack and module:getOption(data.backpack)
 			local openNoBags = data.nobags and module:getOption(data.nobags)
 			local openBankBags = data.bank and module:getOption(data.bank) ~= false
+			local numBankBagSlots = (GetNumBankSlots and select(1, GetNumBankSlots())) or _G.NUM_BANKBAGSLOTS or 6
 
 			if (openAllBags or openBackpack or openNoBags) then
 				-- First, close all bags.
@@ -1882,7 +1891,7 @@ do
 			if (openBankBags) then
 				-- Open all bank bags.
 				-- The game closes these when the bank closes.
-				for i = BACKPACK_CONTAINER+ITEM_INVENTORY_BANK_BAG_OFFSET+1, BACKPACK_CONTAINER+ITEM_INVENTORY_BANK_BAG_OFFSET+NUM_BANKBAGSLOTS, 1 do
+				for i = BACKPACK_CONTAINER+ITEM_INVENTORY_BANK_BAG_OFFSET+1, BACKPACK_CONTAINER+ITEM_INVENTORY_BANK_BAG_OFFSET+numBankBagSlots, 1 do
 				--for i = NUM_BAG_FRAMES + 1, NUM_CONTAINER_FRAMES, 1 do
 					OpenBag(i);
 				end

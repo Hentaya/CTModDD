@@ -136,7 +136,12 @@ local IsConsumableAction = IsConsumableAction;
 local IsCurrentAction = IsCurrentAction;
 local IsEquippedAction = IsEquippedAction;
 local IsItemAction = IsItemAction;
-local IsSpellOverlayed = IsSpellOverlayed;
+local IsSpellOverlayed =
+	(C_SpellActivationOverlay and C_SpellActivationOverlay.IsSpellOverlayed)
+	or _G.IsSpellOverlayed
+	or function()
+		return false
+	end
 local IsStackableAction = IsStackableAction;
 local IsUsableAction = IsUsableAction;
 local rangeIndicator = RANGE_INDICATOR;
@@ -1946,11 +1951,13 @@ end
 -- Cooldown Recharge
 -----
 do
-	hooksecurefunc("StartChargeCooldown", function(parent, chargeStart)
-		if (chargeStart ~= 0 and displayRecharge == false and defbarShowRecharge) then
-			ClearChargeCooldown(parent)
-		end
-	end)
+	if type(_G.StartChargeCooldown) == "function" then
+		hooksecurefunc("StartChargeCooldown", function(parent, chargeStart)
+			if (chargeStart ~= 0 and displayRecharge == false and defbarShowRecharge) then
+				ClearChargeCooldown(parent)
+			end
+		end)
+	end
 end
 
 -----
