@@ -12,8 +12,6 @@
 -- Rebuilt by Dahk Celes (DDCorkum) in 2018   --
 ------------------------------------------------
 
-
-
 local module = select(2, ...);
 local _G = getfenv(0);
 
@@ -45,7 +43,7 @@ local L = module.text;
 local WorldMapFrame = WorldMapFrame;
 local C_Map = C_Map;
 local WaypointLocationDataProviderMixin = WaypointLocationDataProviderMixin;
-
+local CT_MapModTooltip = CreateFrame("GameTooltip", "CT_MapModTooltip", UIParent, "GameTooltipTemplate");
 
 --------------------------------------------
 -- Private design
@@ -802,7 +800,7 @@ end
 function CT_MapMod_PinMixin:OnReleased()
 	-- Override in your mixin, called when this pin is being released by a data provider and is no longer on the map
 	if (self.isShowingTip) then
-		GameTooltip:Hide();
+		CT_MapModTooltip:Hide();
 		self.isShowingTip = nil;
 	end
 	self:Hide();
@@ -848,45 +846,45 @@ function CT_MapMod_PinMixin:OnMouseEnter()
 	end
 	local icon = module.pinIcons[self.subset];
 	if ( self.x > 0.5 ) then
-		GameTooltip:SetOwner(self, "ANCHOR_LEFT");
+		CT_MapModTooltip:SetOwner(self, "ANCHOR_LEFT");
 	else
-		GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+		CT_MapModTooltip:SetOwner(self, "ANCHOR_RIGHT");
 	end
-	GameTooltip:ClearLines();
+	CT_MapModTooltip:ClearLines();
 	if (type(icon) == "table") then
-		GameTooltip:AddDoubleLine(patterns.texCoordIcon:format(icon.path, icon.width, icon.height, icon.left * icon.width, icon.right * icon.width, icon.top * icon.height, icon.bottom * icon.height, self.name), self.set, 0, 1, 0, 0.6, 0.6, 0.6);
+		CT_MapModTooltip:AddDoubleLine(patterns.texCoordIcon:format(icon.path, icon.width, icon.height, icon.left * icon.width, icon.right * icon.width, icon.top * icon.height, icon.bottom * icon.height, self.name), self.set, 0, 1, 0, 0.6, 0.6, 0.6);
 	elseif (icon) then
-		GameTooltip:AddDoubleLine(patterns.basicIcon:format(icon, self.name), self.set, 0, 1, 0, 0.6, 0.6, 0.6);
+		CT_MapModTooltip:AddDoubleLine(patterns.basicIcon:format(icon, self.name), self.set, 0, 1, 0, 0.6, 0.6, 0.6);
 	else
-		GameTooltip:AddDoubleLine(patterns.noIcon:format(self.name), self.set, 0, 1, 0, 0.6, 0.6, 0.6);
+		CT_MapModTooltip:AddDoubleLine(patterns.noIcon:format(self.name), self.set, 0, 1, 0, 0.6, 0.6, 0.6);
 	end
 	if ( self.descript ) then
-		GameTooltip:AddLine(self.descript, nil, nil, nil, 1);
+		CT_MapModTooltip:AddLine(self.descript, nil, nil, nil, 1);
 	end
 	if (WaypointLocationDataProviderMixin and C_Map.CanSetUserWaypointOnMap(self.mapID)) then
-		GameTooltip:AddLine(" ");
-		GameTooltip_AddNormalLine(GameTooltip, MAP_PIN_SHARING_TOOLTIP);
-		GameTooltip:AddLine(" ");
+		CT_MapModTooltip:AddLine(" ");
+		GameTooltip_AddNormalLine(CT_MapModTooltip, MAP_PIN_SHARING_TOOLTIP);
+		CT_MapModTooltip:AddLine(" ");
 	end
 	if (not module.PinHasFocus) then  -- clicking on pins won't do anything while the edit box is open for this or another pin
 		if (self.datemodified and self.version) then
-			GameTooltip:AddDoubleLine(L[GetModifiedClick("CHATLINK") ~= "SHIFT-BUTTON1" and "CT_MapMod/Pin/Shift-Click to Edit" or "CT_MapMod/Pin/Alt-Click to Edit"], self.datemodified .. " (" .. self.version .. ")", 0.2, 1.0, 0.2, 0.3, 0.3, 0.3);
+			CT_MapModTooltip:AddDoubleLine(L[GetModifiedClick("CHATLINK") ~= "SHIFT-BUTTON1" and "CT_MapMod/Pin/Shift-Click to Edit" or "CT_MapMod/Pin/Alt-Click to Edit"], self.datemodified .. " (" .. self.version .. ")", 0.2, 1.0, 0.2, 0.3, 0.3, 0.3);
 		else	
-			GameTooltip:AddLine(L[GetModifiedClick("CHATLINK") ~= "SHIFT-BUTTON1" and "CT_MapMod/Pin/Shift-Click to Edit" or "CT_MapMod/Pin/Alt-Click to Edit"], 0.2, 1.0, 0.2);
+			CT_MapModTooltip:AddLine(L[GetModifiedClick("CHATLINK") ~= "SHIFT-BUTTON1" and "CT_MapMod/Pin/Shift-Click to Edit" or "CT_MapMod/Pin/Alt-Click to Edit"], 0.2, 1.0, 0.2);
 		end
-		GameTooltip:AddDoubleLine(L["CT_MapMod/Pin/Right-Click to Drag"], "uiMapId " .. self.mapID, 0.2, 1.0, 0.2, 0.3, 0.3, 0.3 );
+		CT_MapModTooltip:AddDoubleLine(L["CT_MapMod/Pin/Right-Click to Drag"], "uiMapId " .. self.mapID, 0.2, 1.0, 0.2, 0.3, 0.3, 0.3 );
 		
 	else
 		if (self.datemodified and self.version) then
-			GameTooltip:AddDoubleLine(" ", self.datemodified .. " (" .. self.version .. ")", 0.2, 1.0, 0.2, 0.3, 0.3, 0.3);
+			CT_MapModTooltip:AddDoubleLine(" ", self.datemodified .. " (" .. self.version .. ")", 0.2, 1.0, 0.2, 0.3, 0.3, 0.3);
 		end
 	end
-	GameTooltip:Show();
+	CT_MapModTooltip:Show();
 end
  
 function CT_MapMod_PinMixin:OnMouseLeave()
 	-- Override in your mixin, called when the mouse leaves this pin
-	GameTooltip:Hide();
+	CT_MapModTooltip:Hide();
 end	
  
 function CT_MapMod_PinMixin:ApplyFrameLevel()
@@ -1368,12 +1366,12 @@ function module.configureWorldMapFrame()
 				end);
 			end,
 			["onenter"] = function(self)
-				GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 30, 15);
-				GameTooltip:SetText("CT: " .. L["CT_MapMod/Map/Reset the map"]);
-				GameTooltip:Show();
+				CT_MapModTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 30, 15);
+				CT_MapModTooltip:SetText("CT: " .. L["CT_MapMod/Map/Reset the map"]);
+				CT_MapModTooltip:Show();
 			end,
 			["onleave"] = function(self)
-				GameTooltip:Hide();
+				CT_MapModTooltip:Hide();
 			end
 		},
 		["button#n:CT_MapMod_Button#s:32:32"] = {
@@ -1549,17 +1547,17 @@ function module.configureWorldMapFrame()
 				self.updateText = updateText;
 			end,
 			["onenter"] = function(self)
-				GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 30, 15);
+				CT_MapModTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 30, 15);
 				local playerposition = C_Map.GetPlayerMapPosition(WorldMapFrame:GetMapID(),"player");
 				if (playerposition) then
-					GameTooltip:SetText("CT: Player Coords");
+					CT_MapModTooltip:SetText("CT: Player Coords");
 				else
-					GameTooltip:SetText("Player coords not available here");
+					CT_MapModTooltip:SetText("Player coords not available here");
 				end
-				GameTooltip:Show();
+				CT_MapModTooltip:Show();
 			end,
 			["onleave"] = function(self)
-				GameTooltip:Hide();
+				CT_MapModTooltip:Hide();
 			end,
 			["onshow"] = function(self)
 				self.textTicker = self.textTicker or C_Timer.NewTicker(0.5, self.updateText);
@@ -1596,12 +1594,12 @@ function module.configureWorldMapFrame()
 				self.updateText = updateText;
 			end,
 			["onenter"] = function(self)
-				GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 30, 15);
-				GameTooltip:SetText("CT: Cursor Coords");
-				GameTooltip:Show();
+				CT_MapModTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 30, 15);
+				CT_MapModTooltip:SetText("CT: Cursor Coords");
+				CT_MapModTooltip:Show();
 			end,
 			["onleave"] = function(self)
-				GameTooltip:Hide();
+				CT_MapModTooltip:Hide();
 			end,
 			["onshow"] = function(self)
 				self.textTicker = self.textTicker or C_Timer.NewTicker(0.1, self.updateText);
@@ -1619,7 +1617,7 @@ function module.configureWorldMapFrame()
 	WorldMapFrame:AddCanvasClickHandler(function(canvas, button)
 		if (not module.isCreatingNote) then return; end
 		module.isCreatingNote = nil;
-		GameTooltip:Hide();
+		CT_MapModTooltip:Hide();
 		if (InCombatLockdown()) then return; end
 		local mapID = WorldMapFrame:GetMapID();
 		local x,y = WorldMapFrame:GetNormalizedCursorPosition();

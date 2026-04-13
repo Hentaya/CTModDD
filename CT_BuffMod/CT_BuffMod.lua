@@ -296,6 +296,13 @@ local enchantableSlots = {
 -- rng	[3] = "RangedSlot",
 }
 
+local function scrubValue(value)
+	if scrubsecretvalues then
+		return scrubsecretvalues(value)
+	end
+	return value
+end
+
 local function configureAuras(self, auraTable, consolidateTable, weaponPosition)
 	local point = self:GetAttribute("point") or "TOPRIGHT";
 	local xOffset = tonumber(self:GetAttribute("xOffset")) or 0;
@@ -1456,17 +1463,21 @@ end
 function unitClass:findSpell(spellId)
 	-- Find the aura object associated with the specified spellId.
 	-- Returns nil or the aura object.
-	if (spellId) then
-		-- Return the aura object or nil.
-		local auraObject;
-		for __, auraObjects in pairs(self.spellAuras) do
-			auraObject = auraObjects[spellId];
-			if (auraObject) then
-				return auraObject;
-			end
+	spellId = scrubValue(spellId)
+
+	if type(spellId) ~= "number" and type(spellId) ~= "string" then
+		return nil
+	end
+
+	local auraObject
+	for __, auraObjects in pairs(self.spellAuras) do
+		auraObject = auraObjects[spellId]
+		if (auraObject) then
+			return auraObject
 		end
 	end
-	return nil;
+
+	return nil
 end
 
 function unitClass:updateSpellsForFilter(filter, buffFlag)
@@ -2134,8 +2145,17 @@ local function auraButton_updateFlashing(button)
 		-- To avoid the flashing, we'll check if they are in range when the time is zero, and if not
 		-- then we'll stop the flashing.
 		if (timeRemaining <= 0) then
-			if ( not (UnitInRange(frameObject:getUnitId())) ) then
-				auraObject.isFlashing = false;
+			local inRange = UnitInRange(frameObject:getUnitId())
+
+		-- for 12.0+, we'll also scrub the secret values to null, so we'll just always stop the flashing
+			if (scrubsecretvalues) then
+				inRange = scrubsecretvalues(inRange)
+			elseif (issecretvalue and issecretvalue(inRange)) then
+				inRange = nil
+			end
+
+			if (not inRange) then
+				auraObject.isFlashing = false
 			end
 		end
 	else

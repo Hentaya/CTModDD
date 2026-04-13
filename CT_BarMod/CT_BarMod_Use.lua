@@ -74,6 +74,35 @@ local CanExitVehicle = CanExitVehicle;
 local GetActionCharges = GetActionCharges;
 local GetActionCooldown = GetActionCooldown;
 
+-- function to avoid errors on 'enable>0' when enable is boolean
+local function cooldownIsEnabled(enable)
+	if type(enable) == "boolean" then
+		return enable
+	elseif type(enable) == "number" then
+		return enable > 0
+	else
+		return false
+	end
+end
+
+local function scrubValue(value)
+	if scrubsecretvalues then
+		return scrubsecretvalues(value)
+	end
+	return value
+end
+
+local function scrubCooldown(start, duration, enable)
+	if scrubsecretvalues then
+		start, duration, enable = scrubsecretvalues(start, duration, enable)
+	end
+	return start, duration, enable
+end
+
+local function isPositiveNumber(value)
+	return type(value) == "number" and value > 0
+end
+
 -- GetActionCount, overridden for WoW Classic 1.13.3 (CTMod 8.2.5.8) using GetItemCount and some tooltip scanning
 local OldGetActionCount, GetActionCount, GetItemCount, ReagentScannerTooltip = GetActionCount, GetActionCount, GetItemCount, CreateFrame("GameTooltip", "CT_BarMod_ReagentScanner", nil, "GameTooltipTemplate");
 local reagentScannerCache = {};
@@ -184,7 +213,9 @@ cooldownUpdater = function()
 	for button, fsCount in pairs(cooldownList) do
 		if button.actionId then
 			start, duration, enable = GetActionCooldown(button.actionId);
-			if ( start > 0 and enable > 0 ) then
+			start, duration, enable = scrubCooldown(start, duration, enable);
+
+			if ( isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
 				updateCooldown(fsCount, duration - (currTime - start));
 			else
 				dropCooldownFromQueue(button);
@@ -816,14 +847,33 @@ local function CT_BarMod__ActionButton_OverlayGlowAnimOutFinished(overlay)
 	actionButton.overlay = nil;
 end
 
+local overlayTemplateMissing = false
+
 local function CT_BarMod__ActionButton_GetOverlayGlow()
-	-- This is a modified version of ActionButton_GetOverlayGlow from ActionButton.lua
 	local overlay = tremove(unusedOverlayGlows);
-	if ( not overlay ) then
-		numOverlays = numOverlays + 1;
-		overlay = CreateFrame("Frame", "CT_BarMod__ActionButtonOverlay" .. numOverlays, UIParent, "ActionBarButtonSpellActivationAlert");
+	if (overlay) then
+		return overlay;
 	end
-	return overlay;
+
+	if (overlayTemplateMissing) then
+		return nil;
+	end
+
+	numOverlays = numOverlays + 1;
+	local ok, created = pcall(
+		CreateFrame,
+		"Frame",
+		"CT_BarMod__ActionButtonOverlay" .. numOverlays,
+		UIParent,
+		"ActionBarButtonSpellActivationAlert"
+	);
+
+	if (ok and created) then
+		return created;
+	end
+
+	overlayTemplateMissing = true;
+	return nil;
 end
 
 local function CT_BarMod__ActionButton_HideOverlayGlow(self)
@@ -857,6 +907,9 @@ local function CT_BarMod__ActionButton_ShowOverlayGlow(self)
 		(self.overlay.ProcStartAnim or self.overlay.animIn):Play()
 	else
 		self.overlay = CT_BarMod__ActionButton_GetOverlayGlow();
+		if (not self.overlay) then
+			return;
+		end
 
 		if (module:usingMasque()) then
 			-- Have Masque assign spell alert textures based on the shape of the skin.
@@ -1048,7 +1101,9 @@ function useButton:updateCooldown()
 		
 		-- Action cooldown
 		local start, duration, enable = GetActionCooldown(self.actionId);
-		if ( start > 0 and enable > 0 ) then
+		start, duration, enable = scrubCooldown(start, duration, enable);
+
+		if ( isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
 			cooldown:SetCooldown(start, duration);
 			actionCooldown = true;
 			if ( displayCount ) then
@@ -1056,7 +1111,7 @@ function useButton:updateCooldown()
 			else
 				stopCooldown(cooldown);
 			end
-			bling:SetShown(duration >= minimumCooldownToBling)
+		bling:SetShown(type(duration) == "number" and duration >= minimumCooldownToBling)
 		else
 			stopCooldown(cooldown);
 			actionCooldown = false;
@@ -1064,8 +1119,10 @@ function useButton:updateCooldown()
 
 		-- Loss of control cooldown
 		local start, duration = GetActionLossOfControlCooldown(self.actionId);
-		--cooldown:SetLossOfControlCooldown(start, duration);
-		if (start > 0 and duration > 0) then
+		start = scrubValue(start);
+		duration = scrubValue(duration);
+
+		if (isPositiveNumber(start) and isPositiveNumber(duration)) then
 			controlCooldown = true;
 			bling:SetShown(duration >= minimumCooldownToBling)
 		else
@@ -1081,13 +1138,23 @@ function useButton:updateCooldown()
 
 		-- Recharge animation
 		local current, maxCharges, start, duration, modRate = GetActionCharges(self.actionId);
-		if (displayRecharge and current > 0 and current < maxCharges) then
+
+		if scrubsecretvalues then
+			current, maxCharges, start, duration, modRate = scrubsecretvalues(current, maxCharges, start, duration, modRate)
+		end
+
+		if (
+			displayRecharge
+			and type(current) == "number" and type(maxCharges) == "number"
+			and current > 0 and current < maxCharges
+			and type(start) == "number" and type(duration) == "number"
+		) then
 			recharge:SetCooldown(start, duration, modRate);
 			recharge:Show();
 		else
 			recharge:Hide();
 		end
-	
+
 	end
 end
 
@@ -1167,6 +1234,12 @@ function useButton:updateCount()
 	local text = self.button.count;
 	if ( self.hasAction ) then
 		local count = GetActionCount(actionId)
+		count = scrubValue(count)
+
+		if type(count) ~= "number" then
+			count = 0
+		end
+
 		if (
 			self.isConsumable
 			or self.isStackable
@@ -1174,7 +1247,17 @@ function useButton:updateCount()
 		) then
 			text:SetText(count < 1000 and count or "*");
 		else
-			local charges, maxCharges, chargeStart, chargeDuration = GetActionCharges(actionId);
+			local charges, maxCharges = GetActionCharges(actionId);
+			charges = scrubValue(charges)
+			maxCharges = scrubValue(maxCharges)
+
+			if type(charges) ~= "number" then
+				charges = 0
+			end
+			if type(maxCharges) ~= "number" then
+				maxCharges = 0
+			end
+
 			if (maxCharges > 1) then
 				text:SetText(charges);
 			else
@@ -1891,7 +1974,9 @@ do
 
 		if actionId then
 			local start, duration, enable = GetActionCooldown(actionId);
-			if ( start > 0 and enable > 0 ) then
+			start, duration, enable = scrubCooldown(start, duration, enable);
+
+			if ( isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
 				startCooldown(cooldown, start, duration);
 				if (not displayCount) then
 					hideCooldown(cooldown);
@@ -1903,8 +1988,10 @@ do
 			local i = 1;
 	 		local button = _G["SpellFlyoutButton"..i];
 	 		while (button and button:IsShown()) do
-	 			local start, duration, enable = GetSpellCooldown(button.spellID);
-				if ( start > 0 and duration > 0 and enable > 0 ) then
+				local start, duration, enable = GetSpellCooldown(button.spellID);
+				start, duration, enable = scrubCooldown(start, duration, enable);
+
+				if ( isPositiveNumber(start) and isPositiveNumber(duration) and cooldownIsEnabled(enable) ) then
 					startCooldown(cooldown, start, duration);
 					if (not displayCount) then
 						hideCooldown(cooldown);

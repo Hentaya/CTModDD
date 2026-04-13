@@ -403,15 +403,36 @@ function CT_EH_OnEvent(event)
 	end
 end
 
--- Data collection
-function CT_EH_UpdateRepair(arg1, arg2)
-	if InRepairMode() and GameTooltip:IsShown() and GameTooltipMoneyFrame1 and GameTooltipMoneyFrame1:IsShown() then
-		local gold, silver, copper = 
-			tonumber(GameTooltipMoneyFrame1GoldButtonText:GetText()) or 0,
-			tonumber(GameTooltipMoneyFrame1SilverButtonText:GetText()) or 0,
-			tonumber(GameTooltipMoneyFrame1CopperButtonText:GetText()) or 0
-		MerchantFrame.repairCost = MerchantFrame.repairCost + gold*10000 + silver*100 + copper
+local function CT_EH_GetCurrentRepairTotal()
+-- new helper to get rid of scraping GameTooltips in 12.0
+	local repairAllCost, canRepair = GetRepairAllCost()
+
+	if canRepair and type(repairAllCost) == "number" then
+		return repairAllCost
 	end
+
+	return 0
+end
+
+-- Data collection, updated for 12.0 to use new helper CT_EH_GetCurrentRepairTotal()
+function CT_EH_UpdateRepair(arg1, arg2)
+	if not MerchantFrame or not MerchantFrame:IsShown() or not InRepairMode() then
+		return
+	end
+
+	local previousTotal = MerchantFrame.ctEH_LastRepairTotal
+	if type(previousTotal) ~= "number" then
+		previousTotal = CT_EH_GetCurrentRepairTotal()
+	end
+
+	local currentTotal = CT_EH_GetCurrentRepairTotal()
+	local delta = previousTotal - currentTotal
+
+	if delta > 0 then
+		MerchantFrame.repairCost = (MerchantFrame.repairCost or 0) + delta
+	end
+
+	MerchantFrame.ctEH_LastRepairTotal = currentTotal
 end
 
 hooksecurefunc("PickupInventoryItem", CT_EH_UpdateRepair)
@@ -426,13 +447,19 @@ end
 
 CT_EH_oldRepairAllItems = RepairAllItems;
 function CT_EH_newRepairAllItems(...)
-	local repairAllCost, canRepair = GetRepairAllCost();
-	if ( canRepair and repairAllCost <= GetMoney() and not (...) ) then
-		if ( MerchantFrame.repairCost ) then
-			MerchantFrame.repairCost = MerchantFrame.repairCost + repairAllCost;
-		end
-	end
+	local useGuildBank = ...
+	local previousTotal = CT_EH_GetCurrentRepairTotal()
+
 	CT_EH_oldRepairAllItems(...);
+
+	local currentTotal = CT_EH_GetCurrentRepairTotal()
+	local delta = previousTotal - currentTotal
+
+	if not useGuildBank and delta > 0 then
+		MerchantFrame.repairCost = (MerchantFrame.repairCost or 0) + delta
+	end
+
+	MerchantFrame.ctEH_LastRepairTotal = currentTotal
 end
 RepairAllItems = CT_EH_newRepairAllItems;
 
@@ -581,26 +608,10 @@ end
 --]]
 
 MerchantFrame:HookScript("OnShow", function(self)
---[[	if ( CT_EH_IsVendor(CT_EH_SCANFORREAGENTS) ) then		-- it isn't really clear why this was even necessary.
-		MerchantFrame.reagentCost = 0;
-	else
-		MerchantFrame.reagentCost = nil;
-	end
-	if ( CT_EH_IsVendor(CT_EH_SCANFORAMMO) ) then
-		MerchantFrame.ammoCost = 0;
-	else
-		MerchantFrame.ammoCost = nil;
-	end
-	local repairAllCost, canRepair = GetRepairAllCost();
-	if ( canRepair ) then
-		MerchantFrame.repairCost = 0;
-	else
-		MerchantFrame.repairCost = nil;
-	end
---]]
 	MerchantFrame.reagentCost = 0;
 	MerchantFrame.ammoCost = 0;
 	MerchantFrame.repairCost = 0;
+	MerchantFrame.ctEH_LastRepairTotal = CT_EH_GetCurrentRepairTotal();
 end);
 
 MerchantFrame:HookScript("OnHide", function(self)
@@ -616,6 +627,8 @@ MerchantFrame:HookScript("OnHide", function(self)
 	MerchantFrame.repairCost = nil;
 	MerchantFrame.reagentCost = nil;
 	MerchantFrame.ammoCost = nil;
+	MerchantFrame.ctEH_LastRepairTotal = nil;
+
 end);
 
 local CT_EH_SCANFORREAGENTS =
