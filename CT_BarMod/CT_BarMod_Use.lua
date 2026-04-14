@@ -15,6 +15,7 @@
 -- Initialization
 
 local module = select(2, ...);
+local CT = _G["CT_Library"];
 
 -- Options
 local displayBindings = true;
@@ -83,24 +84,6 @@ local function cooldownIsEnabled(enable)
 	else
 		return false
 	end
-end
-
-local function scrubValue(value)
-	if scrubsecretvalues then
-		return scrubsecretvalues(value)
-	end
-	return value
-end
-
-local function scrubCooldown(start, duration, enable)
-	if scrubsecretvalues then
-		start, duration, enable = scrubsecretvalues(start, duration, enable)
-	end
-	return start, duration, enable
-end
-
-local function isPositiveNumber(value)
-	return type(value) == "number" and value > 0
 end
 
 -- GetActionCount, overridden for WoW Classic 1.13.3 (CTMod 8.2.5.8) using GetItemCount and some tooltip scanning
@@ -213,9 +196,9 @@ cooldownUpdater = function()
 	for button, fsCount in pairs(cooldownList) do
 		if button.actionId then
 			start, duration, enable = GetActionCooldown(button.actionId);
-			start, duration, enable = scrubCooldown(start, duration, enable);
+			start, duration, enable = CT.scrubCooldown(start, duration, enable);
 
-			if ( isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
+			if ( CT.isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
 				updateCooldown(fsCount, duration - (currTime - start));
 			else
 				dropCooldownFromQueue(button);
@@ -1101,9 +1084,8 @@ function useButton:updateCooldown()
 		
 		-- Action cooldown
 		local start, duration, enable = GetActionCooldown(self.actionId);
-		start, duration, enable = scrubCooldown(start, duration, enable);
-
-		if ( isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
+		start, duration, enable = CT.scrubCooldown(start, duration, enable);
+		if ( CT.isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
 			cooldown:SetCooldown(start, duration);
 			actionCooldown = true;
 			if ( displayCount ) then
@@ -1119,10 +1101,10 @@ function useButton:updateCooldown()
 
 		-- Loss of control cooldown
 		local start, duration = GetActionLossOfControlCooldown(self.actionId);
-		start = scrubValue(start);
-		duration = scrubValue(duration);
+		start = CT.scrubValue(start);
+		duration = CT.scrubValue(duration);
 
-		if (isPositiveNumber(start) and isPositiveNumber(duration)) then
+		if (CT.isPositiveNumber(start) and CT.isPositiveNumber(duration)) then
 			controlCooldown = true;
 			bling:SetShown(duration >= minimumCooldownToBling)
 		else
@@ -1234,7 +1216,7 @@ function useButton:updateCount()
 	local text = self.button.count;
 	if ( self.hasAction ) then
 		local count = GetActionCount(actionId)
-		count = scrubValue(count)
+		count = CT.scrubValue(count)
 
 		if type(count) ~= "number" then
 			count = 0
@@ -1248,8 +1230,8 @@ function useButton:updateCount()
 			text:SetText(count < 1000 and count or "*");
 		else
 			local charges, maxCharges = GetActionCharges(actionId);
-			charges = scrubValue(charges)
-			maxCharges = scrubValue(maxCharges)
+			charges = CT.scrubValue(charges)
+			maxCharges = CT.scrubValue(maxCharges)
 
 			if type(charges) ~= "number" then
 				charges = 0
@@ -1974,9 +1956,9 @@ do
 
 		if actionId then
 			local start, duration, enable = GetActionCooldown(actionId);
-			start, duration, enable = scrubCooldown(start, duration, enable);
+			start, duration, enable = CT.scrubCooldown(start, duration, enable);
 
-			if ( isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
+			if ( CT.isPositiveNumber(start) and cooldownIsEnabled(enable) and type(duration) == "number" ) then
 				startCooldown(cooldown, start, duration);
 				if (not displayCount) then
 					hideCooldown(cooldown);
@@ -1989,9 +1971,8 @@ do
 	 		local button = _G["SpellFlyoutButton"..i];
 	 		while (button and button:IsShown()) do
 				local start, duration, enable = GetSpellCooldown(button.spellID);
-				start, duration, enable = scrubCooldown(start, duration, enable);
-
-				if ( isPositiveNumber(start) and isPositiveNumber(duration) and cooldownIsEnabled(enable) ) then
+				start, duration, enable = CT.scrubCooldown(start, duration, enable);				
+				if ( CT.isPositiveNumber(start) and CT.isPositiveNumber(duration) and cooldownIsEnabled(enable) ) then
 					startCooldown(cooldown, start, duration);
 					if (not displayCount) then
 						hideCooldown(cooldown);

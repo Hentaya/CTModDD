@@ -24,6 +24,7 @@
 
 local module = { };
 local _G = getfenv(0);
+local CT = _G["CT_Library"];
 
 local MODULE_NAME = "CT_BuffMod";
 local MODULE_VERSION = strmatch(C_AddOns.GetAddOnMetadata(MODULE_NAME, "version"), "^([%d.]+)");
@@ -295,13 +296,6 @@ local enchantableSlots = {
 	[2] = "SecondaryHandSlot",
 -- rng	[3] = "RangedSlot",
 }
-
-local function scrubValue(value)
-	if scrubsecretvalues then
-		return scrubsecretvalues(value)
-	end
-	return value
-end
 
 local function configureAuras(self, auraTable, consolidateTable, weaponPosition)
 	local point = self:GetAttribute("point") or "TOPRIGHT";
@@ -1463,7 +1457,7 @@ end
 function unitClass:findSpell(spellId)
 	-- Find the aura object associated with the specified spellId.
 	-- Returns nil or the aura object.
-	spellId = scrubValue(spellId)
+	spellId = CT.scrubValue(spellId)
 
 	if type(spellId) ~= "number" and type(spellId) ~= "string" then
 		return nil

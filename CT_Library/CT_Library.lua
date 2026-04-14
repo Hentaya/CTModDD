@@ -180,6 +180,25 @@ do
 	end
 end
 
+-- Secret value helpers
+function libPublic.scrubValue(value)
+	if scrubsecretvalues then
+		return scrubsecretvalues(value)
+	end
+	return value
+end
+
+function libPublic.scrubCooldown(start, duration, enable)
+	if scrubsecretvalues then
+		start, duration, enable = scrubsecretvalues(start, duration, enable)
+	end
+	return start, duration, enable
+end
+
+function libPublic.isPositiveNumber(value)
+	return type(value) == "number" and value > 0
+end
+
 -- Print a formatted message in yellow to ChatFrame1
 function lib:printformat(...)
 	printText(ChatFrame1, 1, 1, 0, format(...));
