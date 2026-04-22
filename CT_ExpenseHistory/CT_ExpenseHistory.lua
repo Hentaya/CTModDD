@@ -445,12 +445,11 @@ else
 end
 
 
-CT_EH_oldRepairAllItems = RepairAllItems;
-function CT_EH_newRepairAllItems(...)
-	local useGuildBank = ...
-	local previousTotal = CT_EH_GetCurrentRepairTotal()
-
-	CT_EH_oldRepairAllItems(...);
+local function CT_EH_TrackRepairAll(useGuildBank)
+	local previousTotal = MerchantFrame.ctEH_LastRepairTotal
+	if type(previousTotal) ~= "number" then
+		previousTotal = CT_EH_GetCurrentRepairTotal()
+	end
 
 	local currentTotal = CT_EH_GetCurrentRepairTotal()
 	local delta = previousTotal - currentTotal
@@ -461,7 +460,7 @@ function CT_EH_newRepairAllItems(...)
 
 	MerchantFrame.ctEH_LastRepairTotal = currentTotal
 end
-RepairAllItems = CT_EH_newRepairAllItems;
+hooksecurefunc("RepairAllItems", CT_EH_TrackRepairAll)
 
 module.customOpenFunction = function()
 	if ( CT_ExpenseHistoryFrame:IsVisible() ) then
@@ -705,11 +704,13 @@ local CT_EH_SCANFORAMMO =
 
 -- Hook BuyMerchantItem()
 local localizedReagents, localizedAmmo;
-local CT_EH_oldBuyMerchantItem = BuyMerchantItem;
-function BuyMerchantItem(id, qty)
+
+local function CT_EH_BuyMerchantItem(id, qty)
 	local name, texture, price, quantity, numAvailable, isUsable = GetMerchantItemInfo(id);
-	local realPrice = price*(qty or 1);
-	CT_EH_oldBuyMerchantItem(id, qty);
+	price = tonumber(price) or 0
+	quantity = tonumber(quantity) or 1
+	local realPrice = price * (qty or 1);
+
 	if (name) then
 		if (not localizedReagents or not localizedAmmo) then
 			localizedReagents = { };
@@ -721,14 +722,15 @@ function BuyMerchantItem(id, qty)
 				localizedAmmo[L["CT_ExpenseHistory/Ammo/" .. val]] = true;
 			end
 		end
-		if ( MerchantFrame.reagentCost and localizedReagents[name] and realPrice <= GetMoney() ) then
+		if ( MerchantFrame.reagentCost and localizedReagents[name] ) then
 			MerchantFrame.reagentCost = MerchantFrame.reagentCost + realPrice;
 		end
-		if ( MerchantFrame.ammoCost and localizedAmmo[name] and realPrice <= GetMoney() ) then
+		if ( MerchantFrame.ammoCost and localizedAmmo[name] ) then
 			MerchantFrame.ammoCost = MerchantFrame.ammoCost + realPrice;
 		end
 	end
 end
+hooksecurefunc("BuyMerchantItem", CT_EH_BuyMerchantItem)
 
 function CT_EH_SendMail(target, subject, body)
 	local price = SendMailCostMoneyFrame.staticMoney;
@@ -739,14 +741,13 @@ end
 hooksecurefunc("SendMail", CT_EH_SendMail);
 
 -- Hook TakeTaxiNode()
-CT_EH_oldTakeTaxiNode = TakeTaxiNode;
-function CT_EH_newTakeTaxiNode(id)
-	if ( GetMoney() >= TaxiNodeCost(id) and TaxiNodeCost(id) > 0 ) then
-		CT_EH_AddExpense(TaxiNodeCost(id), "Flight")
+local function CT_EH_TakeTaxiNode(id)
+	local cost = TaxiNodeCost(id)
+	if ( type(cost) == "number" and cost > 0 and GetMoney() >= cost ) then
+		CT_EH_AddExpense(cost, "Flight")
 	end
-	CT_EH_oldTakeTaxiNode(id);
 end
-TakeTaxiNode = CT_EH_newTakeTaxiNode;
+hooksecurefunc("TakeTaxiNode", CT_EH_TakeTaxiNode)
 
 function CT_EH_AddExpense(cost, item)
 	local key = UnitName("player") .. "@" .. GetRealmName();

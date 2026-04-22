@@ -183,8 +183,19 @@ local function refreshBuffs()
 			local aura = C_UnitAuras.GetAuraDataByIndex(frame.unit, i, debuffFilter)
 			if (aura) then
 				button.Icon:SetTexture(aura.icon)
-				button.Count:SetText(aura.applications > 1 and aura.applications or "")
-				local color = DebuffTypeColor[aura.dispelName or "none"]
+
+				local applications = CT.scrubValue(aura.applications)
+				if type(applications) ~= "number" then
+					applications = 0
+				end
+				button.Count:SetText(applications > 1 and applications or "")
+
+				local dispelName = CT.scrubValue(aura.dispelName)
+				if type(dispelName) ~= "string" then
+					dispelName = "none"
+				end
+
+				local color = PARTYBUFFS_DEBUFF_COLORS[dispelName] or PARTYBUFFS_DEBUFF_COLORS["none"]
 				button.Border:SetVertexColor(color.r, color.g, color.b)
 				button:Show()
 				debuffsShown = i

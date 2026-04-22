@@ -2970,9 +2970,6 @@ end
 function CT_BuffMod_AuraButton_OnShow(self)
 	if (not self.ctinit) then
 		self.ctinit = true;
-		self:RegisterForClicks("RightButtonDown", "LeftButtonDown", "RightButtonUp");
-			-- alt-LeftButtonDown will always insecurely select a window
-			-- either RightButtonDown or RightButtonUp may trigger based on ActionButtonUseKeyDown (from WoW 10.0 onwards)
 		auraButton_Update(self);
 	end
 end

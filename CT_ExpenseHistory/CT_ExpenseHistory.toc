@@ -1,5 +1,5 @@
-## Interface: 120000, 110100
-## Version: 11.0.2.2
+## Interface: 120005, 110100
+## Version: 11.0.2.3
 ## Title: CT_ExpenseHistory
 ## Notes: Detailed log of character expenses.
 ## DefaultState: Enabled

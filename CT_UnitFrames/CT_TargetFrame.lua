@@ -187,7 +187,7 @@ local function CT_TargetFrame_HealthTextStatusBar_UpdateTextString(bar)
 			style = CT_UnitFramesOptions.styles[3][5];
 		end
 		module:UpdateStatusBarTextString(bar, style, 0)
-		CT_UnitFrames_HealthBar_OnValueChanged(bar, tonumber(bar:GetValue()), not CT_UnitFramesOptions.oneColorHealth)
+		CT_UnitFrames_HealthBar_OnValueChanged(bar, bar:GetValue(), not CT_UnitFramesOptions.oneColorHealth)
 		module:UpdateBesideBarTextString(bar, CT_UnitFramesOptions.styles[3][2], CT_TargetHealthLeft)	
 	end
 end
@@ -217,26 +217,6 @@ module:regEvent("PLAYER_LOGIN", function()
 	end
 end);
 
---[[	replaced by PLAYER_LOGIN event
-
-	function CT_TargetFrame_ShowTextStatusBarText(bar)
-		if (bar == TargetFrameHealthBar or bar == TargetFrameManaBar) then
-			CT_TargetFrame_TextStatusBar_UpdateTextString(bar);
-		end
-	end
-
-
-	function CT_TargetFrame_HideTextStatusBarText(bar)
-		if (bar == TargetFrameHealthBar or bar == TargetFrameManaBar) then
-			CT_TargetFrame_TextStatusBar_UpdateTextString(bar);
-		end
-	end
-
-	hooksecurefunc("TextStatusBar_UpdateTextString", CT_TargetFrame_TextStatusBar_UpdateTextString);
-	hooksecurefunc("ShowTextStatusBarText", CT_TargetFrame_ShowTextStatusBarText);
-	hooksecurefunc("HideTextStatusBarText", CT_TargetFrame_HideTextStatusBarText);
---]]
-
 function module:AnchorTargetFrameSideText()
 	local fsTable = { "CT_TargetHealthLeft", "CT_TargetManaLeft" };
 	for i, name in ipairs(fsTable) do
@@ -259,8 +239,6 @@ function module:AnchorTargetFrameSideText()
 end
 
 function module:ShowTargetFrameBarText()
-	UnitFrameHealthBar_Update(healthBar, "target");
-	UnitFrameManaBar_Update(manaBar, "target");
 	CT_TargetFrame_HealthTextStatusBar_UpdateTextString(healthBar);
 	CT_TargetFrame_ManaTextStatusBar_UpdateTextString(manaBar);
 end

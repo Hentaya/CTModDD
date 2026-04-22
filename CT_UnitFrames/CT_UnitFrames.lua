@@ -13,6 +13,7 @@
 -- Initialization
 
 local module = select(2,...);
+local CT = _G["CT_Library"];
 
 local MODULE_NAME = "CT_UnitFrames";
 local MODULE_VERSION = strmatch(C_AddOns.GetAddOnMetadata(MODULE_NAME, "version"), "^([%d.]+)");
@@ -20,7 +21,7 @@ local MODULE_VERSION = strmatch(C_AddOns.GetAddOnMetadata(MODULE_NAME, "version"
 module.name = MODULE_NAME;
 module.version = MODULE_VERSION;
 
-CT_Library:registerModule(module);
+CT:registerModule(module);
 --_G[MODULE_NAME] = module.publicInterface;	-- not ready for this until the options menu is reformatted to lua and integrated with the rest of CT Mod
 _G[MODULE_NAME] = module;
 
@@ -129,9 +130,21 @@ function module:UpdateStatusBarTextString(textStatusBar, settings, lockShow)
 	
 	-- STEP 2:
 	if (lockShow == nil) then lockShow = textStatusBar.lockShow; end
+
 	local value = textStatusBar:GetValue();
 	local valueMin, valueMax = textStatusBar:GetMinMaxValues();
-	if ( valueMax > 0  and not ( textStatusBar.pauseUpdates ) ) then
+
+	value = CT.scrubValue(value)
+	valueMin = CT.scrubValue(valueMin)
+	valueMax = CT.scrubValue(valueMax)
+
+	if (
+		type(value) == "number"
+		and type(valueMin) == "number"
+		and type(valueMax) == "number"
+		and valueMax > 0
+		and not textStatusBar.pauseUpdates
+	) then
 		local style = settings[1];
 		local abbreviate = CT_UnitFramesOptions.largeAbbreviate ~= false;
 		local breakup = CT_UnitFramesOptions.largeBreakUp ~= false;
@@ -216,7 +229,17 @@ function module:UpdateBesideBarTextString(textStatusBar, settings, textString)
 	if(textString) then
 		local value = textStatusBar:GetValue();
 		local valueMin, valueMax = textStatusBar:GetMinMaxValues();
-		if ( valueMax > 0 ) then
+
+		value = CT.scrubValue(value)
+		valueMin = CT.scrubValue(valueMin)
+		valueMax = CT.scrubValue(valueMax)
+
+		if (
+			type(value) == "number"
+			and type(valueMin) == "number"
+			and type(valueMax) == "number"
+			and valueMax > 0
+		) then
 			local style = settings[1];
 			local abbreviate = CT_UnitFramesOptions.largeAbbreviate ~= false;
 			local breakup = CT_UnitFramesOptions.largeBreakUp;
@@ -265,11 +288,20 @@ function module:UpdateBesideBarTextString(textStatusBar, settings, textString)
 end
 
 function CT_UnitFrames_HealthBar_OnValueChanged(self, value, smooth)
-	if ( not value ) then
+	value = CT.scrubValue(value)
+	if type(value) ~= "number" then
 		return;
 	end
+
 	local r, g, b;
 	local min, max = self:GetMinMaxValues();
+	min = CT.scrubValue(min)
+	max = CT.scrubValue(max)
+
+	if type(min) ~= "number" or type(max) ~= "number" then
+		return;
+	end
+
 	if ( (value < min) or (value > max) ) then
 		return;
 	end

@@ -1966,7 +1966,7 @@ do
 			else
 				hideCooldown(cooldown);
 			end
-		else
+		else 
 			local i = 1;
 	 		local button = _G["SpellFlyoutButton"..i];
 	 		while (button and button:IsShown()) do
