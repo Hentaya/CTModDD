@@ -1,3 +1,6 @@
+CT_Viewport (12.0.5.0) 2026-05-24
+- Fixed a resize-handle error on current Retail clients by using SetResizeBounds when SetMaxResize/SetMinResize are unavailable. Patch by Hentaya.
+
 CT_MapMod (11.0.2.2) 2024-08-18
 - Updates for WoW: The War Within
 

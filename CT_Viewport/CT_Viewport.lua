@@ -96,37 +96,59 @@ function module.GetQuotient(number)
 end
 
 -- Resizing functions
+local function setResizeBoundsCompat(frame, maxWidth, maxHeight)
+	local minWidth = ivalues[5] / 2;
+	local minHeight = ivalues[6] / 2;
+
+	if ( maxWidth < minWidth ) then
+		maxWidth = minWidth;
+	end
+	if ( maxHeight < minHeight ) then
+		maxHeight = minHeight;
+	end
+
+	if ( frame.SetMaxResize ) then
+		frame:SetMaxResize(maxWidth, maxHeight);
+		if ( frame.SetMinResize ) then
+			frame:SetMinResize(minWidth, minHeight);
+		end
+	elseif ( frame.SetResizeBounds ) then
+		frame:SetResizeBounds(minWidth, minHeight, maxWidth, maxHeight);
+	end
+end
+
 function module.Resize(button, anchorPoint)
 	module.UpdateInnerFrameBounds();
 	local iframe = CT_ViewportInnerFrame;
+	local parent = button:GetParent();
 
-	button:GetParent():StartSizing(anchorPoint);
+	parent:StartSizing(anchorPoint);
 	module.isResizing = anchorPoint;
 
 	-- A bit hackish, but meh, it works
 	if ( anchorPoint == "LEFT" ) then
-		button:GetParent():SetMaxResize(ivalues[5] - (ivalues[2] - iframe:GetRight()), ivalues[6]);
+		setResizeBoundsCompat(parent, ivalues[5] - (ivalues[2] - iframe:GetRight()), ivalues[6]);
 
 	elseif ( anchorPoint == "RIGHT" ) then
-		button:GetParent():SetMaxResize(ivalues[5] - (iframe:GetLeft() - ivalues[1]), ivalues[6]);
+		setResizeBoundsCompat(parent, ivalues[5] - (iframe:GetLeft() - ivalues[1]), ivalues[6]);
 
 	elseif ( anchorPoint == "TOP" ) then
-		button:GetParent():SetMaxResize(ivalues[5], ivalues[6] - (iframe:GetBottom() - ivalues[4]));
+		setResizeBoundsCompat(parent, ivalues[5], ivalues[6] - (iframe:GetBottom() - ivalues[4]));
 
 	elseif ( anchorPoint == "BOTTOM" ) then
-		button:GetParent():SetMaxResize(ivalues[5], ivalues[6] - (ivalues[3] - iframe:GetTop()));
+		setResizeBoundsCompat(parent, ivalues[5], ivalues[6] - (ivalues[3] - iframe:GetTop()));
 
 	elseif ( anchorPoint == "TOPLEFT" ) then
-		button:GetParent():SetMaxResize(ivalues[5] - (ivalues[2] - iframe:GetRight()), ivalues[6] - (iframe:GetBottom() - ivalues[4]));
+		setResizeBoundsCompat(parent, ivalues[5] - (ivalues[2] - iframe:GetRight()), ivalues[6] - (iframe:GetBottom() - ivalues[4]));
 
 	elseif ( anchorPoint == "TOPRIGHT" ) then
-		button:GetParent():SetMaxResize(ivalues[5] - (iframe:GetLeft() - ivalues[1]), ivalues[6] - (iframe:GetBottom() - ivalues[4]));
+		setResizeBoundsCompat(parent, ivalues[5] - (iframe:GetLeft() - ivalues[1]), ivalues[6] - (iframe:GetBottom() - ivalues[4]));
 
 	elseif ( anchorPoint == "BOTTOMLEFT" ) then
-		button:GetParent():SetMaxResize(ivalues[5] - (ivalues[2] - iframe:GetRight()), ivalues[6] - (ivalues[3] - iframe:GetTop()));
+		setResizeBoundsCompat(parent, ivalues[5] - (ivalues[2] - iframe:GetRight()), ivalues[6] - (ivalues[3] - iframe:GetTop()));
 
 	elseif ( anchorPoint == "BOTTOMRIGHT" ) then
-		button:GetParent():SetMaxResize(ivalues[5] - (iframe:GetLeft() - ivalues[1]), ivalues[6] - (ivalues[3] - iframe:GetTop()));
+		setResizeBoundsCompat(parent, ivalues[5] - (iframe:GetLeft() - ivalues[1]), ivalues[6] - (ivalues[3] - iframe:GetTop()));
 	end
 end
 
