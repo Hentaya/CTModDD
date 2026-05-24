@@ -1,4 +1,4 @@
-## Interface: 120000, 110100
+## Interface: 120005, 120000, 110100
 ## Version: 11.1.0.1
 ## Title: CT_BarMod
 ## Notes: Intuitive yet powerful action bar addon.

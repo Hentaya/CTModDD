@@ -1,4 +1,4 @@
-## Interface: 120000, 110100
+## Interface: 120005, 120000, 110100
 ## Version: 11.0.2.2
 ## Title: CT_Timer
 ## Notes: Shows a timer that counts both up and down.

@@ -415,7 +415,8 @@ local function CT_EH_GetCurrentRepairTotal()
 end
 
 -- Data collection, updated for 12.0 to use new helper CT_EH_GetCurrentRepairTotal()
-function CT_EH_UpdateRepair(arg1, arg2)
+-- Data collection, updated for 12.0 to avoid hooking item-use functions.
+function CT_EH_UpdateRepair()
 	if not MerchantFrame or not MerchantFrame:IsShown() or not InRepairMode() then
 		return
 	end
@@ -429,36 +430,22 @@ function CT_EH_UpdateRepair(arg1, arg2)
 	local delta = previousTotal - currentTotal
 
 	if delta > 0 then
-		MerchantFrame.repairCost = (MerchantFrame.repairCost or 0) + delta
+		if MerchantFrame.ctEH_IgnoreNextRepairDelta then
+			MerchantFrame.ctEH_IgnoreNextRepairDelta = nil
+		else
+			MerchantFrame.repairCost = (MerchantFrame.repairCost or 0) + delta
+		end
+	elseif MerchantFrame.ctEH_IgnoreNextRepairDelta and GetTime() - MerchantFrame.ctEH_IgnoreNextRepairDelta > 1 then
+		MerchantFrame.ctEH_IgnoreNextRepairDelta = nil
 	end
 
 	MerchantFrame.ctEH_LastRepairTotal = currentTotal
 end
-
-hooksecurefunc("PickupInventoryItem", CT_EH_UpdateRepair)
-if C_Container and C_Container.UseContainerItem then
-	hooksecurefunc(C_Container, "UseContainerItem", CT_EH_UpdateRepair)
-	hooksecurefunc(C_Container, "PickupContainerItem", CT_EH_UpdateRepair)
-else
-	hooksecurefunc("UseContainerItem", CT_EH_UpdateRepair)
-	hooksecurefunc("PickupContainerItem", CT_EH_UpdateRepair)
-end
-
 
 local function CT_EH_TrackRepairAll(useGuildBank)
-	local previousTotal = MerchantFrame.ctEH_LastRepairTotal
-	if type(previousTotal) ~= "number" then
-		previousTotal = CT_EH_GetCurrentRepairTotal()
+	if useGuildBank and MerchantFrame and MerchantFrame:IsShown() then
+		MerchantFrame.ctEH_IgnoreNextRepairDelta = GetTime()
 	end
-
-	local currentTotal = CT_EH_GetCurrentRepairTotal()
-	local delta = previousTotal - currentTotal
-
-	if not useGuildBank and delta > 0 then
-		MerchantFrame.repairCost = (MerchantFrame.repairCost or 0) + delta
-	end
-
-	MerchantFrame.ctEH_LastRepairTotal = currentTotal
 end
 hooksecurefunc("RepairAllItems", CT_EH_TrackRepairAll)
 
@@ -593,24 +580,14 @@ function CT_EH_Tab_OnClick(self)
 	PanelTemplates_SetTab(CT_ExpenseHistoryFrame, self:GetID());
 end
 
--- Find out if vendor is reagent vendor
---[[		-- REMOVED IN 8.2.5.6 -- it isn't really clear why this was even necessary
-function CT_EH_IsVendor(tbl)
-	for i = 1, GetMerchantNumItems(), 1 do
-		local name, texture, price, quantity, numAvailable, isUsable = GetMerchantItemInfo(i);
-		if ( name and tbl[strlower(name)] ) then
-			return true;
-		end
-	end
-	return false;
-end
---]]
+MerchantFrame:HookScript("OnUpdate", CT_EH_UpdateRepair);
 
 MerchantFrame:HookScript("OnShow", function(self)
 	MerchantFrame.reagentCost = 0;
 	MerchantFrame.ammoCost = 0;
 	MerchantFrame.repairCost = 0;
 	MerchantFrame.ctEH_LastRepairTotal = CT_EH_GetCurrentRepairTotal();
+	MerchantFrame.ctEH_IgnoreNextRepairDelta = nil;
 end);
 
 MerchantFrame:HookScript("OnHide", function(self)
@@ -627,7 +604,7 @@ MerchantFrame:HookScript("OnHide", function(self)
 	MerchantFrame.reagentCost = nil;
 	MerchantFrame.ammoCost = nil;
 	MerchantFrame.ctEH_LastRepairTotal = nil;
-
+	MerchantFrame.ctEH_IgnoreNextRepairDelta = nil;
 end);
 
 local CT_EH_SCANFORREAGENTS =

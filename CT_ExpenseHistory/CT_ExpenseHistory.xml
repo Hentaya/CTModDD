@@ -952,7 +952,7 @@
 		</Frames>
 		<Scripts>
 			<OnLoad function="CT_ExpenseHistoryFrame_OnLoad" />
-			<OnEvent>
+			<!-- <OnEvent>
 				CT_EH_OnEvent(event);
 			</OnEvent>
 			<OnShow>
@@ -963,7 +963,7 @@
 			</OnUpdate>
 			<OnHide>
 				PlaySound(1115);
-			</OnHide>
+			</OnHide> -->
 		</Scripts>
 	</Frame>
 </Ui>
